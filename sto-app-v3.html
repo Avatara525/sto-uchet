@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>СТО — Регистрация работ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c25;
+    --surface2: #1f2433;
+    --border: #2a3044;
+    --accent: #f0a500;
+    --accent2: #e05c2a;
+    --text: #e8ecf5;
+    --text2: #8a94aa;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { background: var(--surface); border-bottom: 2px solid var(--accent); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 3px; color: var(--accent); line-height: 1; }
+  .header-logo span { color: var(--text2); font-size: 12px; display: block; letter-spacing: 2px; font-family: 'IBM Plex Mono', monospace; }
+  .user-badge { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px 5px 6px; font-size: 12px; color: var(--text2); cursor: pointer; }
+  .user-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #000; }
+
+  /* SCREENS */
+  .screen { display: none; padding: 16px; }
+  .screen.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* LOGIN */
+  #screen-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 24px; text-align: center; }
+  .login-icon { font-size: 64px; margin-bottom: 16px; }
+  .login-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 4px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
+  .login-sub { color: var(--text2); font-size: 13px; letter-spacing: 1px; margin-bottom: 40px; font-family: 'IBM Plex Mono', monospace; }
+  .btn-google { display: flex; align-items: center; gap: 12px; background: #fff; color: #333; border: none; border-radius: var(--radius); padding: 14px 28px; font-size: 15px; font-weight: 500; cursor: pointer; width: 100%; max-width: 300px; justify-content: center; transition: transform 0.1s, box-shadow 0.2s; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .btn-google:active { transform: scale(0.97); }
+  .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+  /* CONFIG NOTICE */
+  .config-box { margin-top: 24px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; color: var(--text2); max-width: 320px; text-align: left; }
+  .config-box strong { color: var(--accent); display: block; margin-bottom: 8px; font-size: 13px; }
+  .config-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); font-size: 12px; font-family: 'IBM Plex Mono', monospace; outline: none; margin-top: 6px; }
+  .config-input:focus { border-color: var(--accent); }
+  .btn-config-save { margin-top: 10px; background: var(--accent); color: #000; border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; font-family: 'IBM Plex Sans', sans-serif; }
+
+  /* LOADING OVERLAY */
+  .overlay { position: fixed; inset: 0; background: rgba(15,17,23,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 16px; }
+  .overlay.hidden { display: none; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .overlay-text { color: var(--text2); font-size: 13px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px; }
+
+  /* SECTION TITLE */
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* FORM */
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; font-family: 'IBM Plex Mono', monospace; }
+  .form-label .req { color: var(--accent); }
+  .form-control { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 14px; color: var(--text); font-size: 14px; font-family: 'IBM Plex Sans', sans-serif; outline: none; transition: border-color 0.2s; appearance: none; -webkit-appearance: none; }
+  .form-control:focus { border-color: var(--accent); }
+  .form-control::placeholder { color: var(--text2); }
+  select.form-control { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238a94aa' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  textarea.form-control { resize: vertical; min-height: 72px; }
+
+  /* CHECKBOX */
+  .checkbox-group { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 14px; cursor: pointer; }
+  .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+  .checkbox-label { font-size: 14px; color: var(--text); }
+
+  /* INFO ROW */
+  .info-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 10px; }
+  .info-row-label { font-size: 11px; color: var(--text2); font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px; }
+  .info-row-value { font-size: 13px; font-weight: 500; font-family: 'IBM Plex Mono', monospace; color: var(--accent); max-width: 60%; text-align: right; }
+
+  /* MATERIALS */
+  .materials-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .mat-title { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text2); margin-bottom: 12px; font-family: 'IBM Plex Mono', monospace; }
+  .material-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; }
+  .mat-row { display: grid; grid-template-columns: 1fr 80px 70px; gap: 8px; align-items: end; margin-top: 8px; }
+  .mat-remove { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--red); font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+  .btn-add-mat { display: flex; align-items: center; gap: 8px; background: none; border: 1px dashed var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text2); font-size: 13px; cursor: pointer; width: 100%; justify-content: center; transition: border-color 0.2s, color 0.2s; font-family: 'IBM Plex Sans', sans-serif; margin-top: 4px; }
+  .btn-add-mat:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* BUTTONS */
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: var(--radius); padding: 14px 20px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; transition: transform 0.1s, opacity 0.2s; font-family: 'IBM Plex Sans', sans-serif; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-row .btn { flex: 1; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--green); color: #000; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 998; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); white-space: nowrap; box-shadow: 0 8px 30px rgba(46,204,113,0.4); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--red); box-shadow: 0 8px 30px rgba(231,76,60,0.4); color: #fff; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+  /* BOTTOM NAV */
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--surface); border-top: 1px solid var(--border); display: none; padding: 8px 0 env(safe-area-inset-bottom); z-index: 99; }
+  .bottom-nav.visible { display: flex; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; cursor: pointer; color: var(--text2); font-size: 10px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.5px; transition: color 0.2s; border: none; background: none; }
+  .nav-item.active { color: var(--accent); }
+  .nav-item svg { width: 20px; height: 20px; }
+  body.has-nav .screen { padding-bottom: 80px; }
+
+  /* HISTORY */
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .history-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .history-item-id { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); }
+  .history-item-date { font-size: 11px; color: var(--text2); font-family: 'IBM Plex Mono', monospace; }
+  .history-item-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .history-item-sub { font-size: 12px; color: var(--text2); }
+  .history-status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; margin-top: 6px; }
+  .history-status.ok { color: var(--green); }
+  .history-status.pending { color: var(--text2); }
+  .history-status.error { color: var(--red); }
+  .empty-state { text-align: center; padding: 48px 16px; color: var(--text2); }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="overlay hidden" id="overlay">
+  <div class="spinner"></div>
+  <div class="overlay-text" id="overlay-text">ЗАГРУЗКА...</div>
+</div>
+
+<!-- HEADER -->
+<div class="header" id="app-header" style="display:none">
+  <div class="header-logo">СТО<span>УЧЁТ РАБОТ</span></div>
+  <div class="user-badge" onclick="logout()">
+    <div class="user-avatar" id="user-avatar-letter">?</div>
+    <span id="user-name-short">Выход</span>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ==================== ЛОГИН ==================== -->
+<div id="screen-login" class="screen active">
+  <div class="login-icon">🔧</div>
+  <div class="login-title">СТО УЧЁТ</div>
+  <div class="login-sub">СИСТЕМА РЕГИСТРАЦИИ РАБОТ</div>
+
+  <button class="btn-google" onclick="startGoogleLogin()">
+    <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Войти через Google
+  </button>
+
+  <div class="config-box">
+    <strong>⚙️ Настройка подключения</strong>
+    <div style="margin-bottom:6px;color:var(--text2)">Вставьте URL вашего Apps Script Web App:</div>
+    <input class="config-input" id="script-url-input" placeholder="https://script.google.com/macros/s/..." value="">
+    <button class="btn-config-save" onclick="saveScriptUrl()">Сохранить URL</button>
+    <div style="margin-top:8px;font-size:11px;color:var(--text2)">После сохранения кнопка «Войти через Google» заработает с реальными данными.</div>
+  </div>
+</div>
+
+<!-- ==================== ФОРМА ==================== -->
+<div id="screen-form" class="screen">
+
+  <div class="section-title">Автоданные</div>
+  <div class="info-row"><span class="info-row-label">ID ЗАПИСИ</span><span class="info-row-value" id="display-id">—</span></div>
+  <div class="info-row"><span class="info-row-label">ДАТА / ВРЕМЯ</span><span class="info-row-value" id="display-date">—</span></div>
+  <div class="info-row"><span class="info-row-label">ИСПОЛНИТЕЛЬ</span><span class="info-row-value" id="display-executor">—</span></div>
+  <div class="info-row"><span class="info-row-label">ГРУППА УСЛУГ</span><span class="info-row-value" id="display-group">—</span></div>
+
+  <div class="divider"></div>
+  <div class="section-title">Авто клиента</div>
+
+  <div class="form-group">
+    <label class="form-label">МАРКА И МОДЕЛЬ <span class="req">*</span></label>
+    <input list="dl-cars" class="form-control" id="f-car-model" placeholder="Toyota Camry" autocomplete="off">
+    <datalist id="dl-cars"></datalist>
+  </div>
+  <div class="form-group">
+    <label class="form-label">НОМЕР АВТО <span class="req">*</span></label>
+    <input list="dl-plates" class="form-control" id="f-car-plate" placeholder="AA 1234 BB" autocomplete="off">
+    <datalist id="dl-plates"></datalist>
+  </div>
+  <div class="form-group">
+    <label class="form-label">VIN КОД</label>
+    <input list="dl-vins" class="form-control" id="f-vin" placeholder="WVWZZZ1JZXW000001" autocomplete="off" style="text-transform:uppercase">
+    <datalist id="dl-vins"></datalist>
+  </div>
+  <div class="form-group">
+    <label class="form-label">КОСЯК</label>
+    <div class="checkbox-group" onclick="toggleCheck('f-kosyak')">
+      <input type="checkbox" id="f-kosyak">
+      <span class="checkbox-label">Есть замечание / косяк</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-title">Услуга / Работа</div>
+
+  <div class="form-group">
+    <label class="form-label">УСЛУГА / РАБОТА <span class="req">*</span></label>
+    <select class="form-control" id="f-service" onchange="onServiceChange()">
+      <option value="">— Выберите услугу —</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">КОММЕНТАРИЙ</label>
+    <textarea class="form-control" id="f-comment" placeholder="Дополнительные сведения..."></textarea>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-title">Материалы</div>
+  <div class="materials-block">
+    <div class="mat-title">СПИСАНИЕ МАТЕРИАЛОВ ПО ДАННОЙ РАБОТЕ</div>
+    <div id="materials-list"></div>
+    <button class="btn-add-mat" onclick="addMaterial()">+ Добавить материал</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="resetForm()">Сбросить</button>
+    <button class="btn btn-primary" id="btn-save" onclick="saveRecord()">Сохранить</button>
+  </div>
+</div>
+
+<!-- ==================== ИСТОРИЯ ==================== -->
+<div id="screen-history" class="screen">
+  <div class="section-title">История записей</div>
+  <div id="history-list"></div>
+</div>
+
+<!-- ==================== BOTTOM NAV ==================== -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="nav-item active" id="nav-form" onclick="showScreen('form')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    НОВАЯ
+  </button>
+  <button class="nav-item" id="nav-history" onclick="showScreen('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
+    ИСТОРИЯ
+  </button>
+</nav>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+let SCRIPT_URL = localStorage.getItem('sto_script_url') || '';
+let currentUser = null;
+let refs = null; // справочники из Google Sheets
+let matCount = 0;
+let localHistory = JSON.parse(localStorage.getItem('sto_history') || '[]');
+
+// Показать сохранённый URL при загрузке
+window.addEventListener('load', () => {
+  if (SCRIPT_URL) {
+    document.getElementById('script-url-input').value = SCRIPT_URL;
+  }
+});
+
+function saveScriptUrl() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showToast('Введите корректный URL Apps Script', true); return;
+  }
+  SCRIPT_URL = url;
+  localStorage.setItem('sto_script_url', url);
+  showToast('✓ URL сохранён');
+}
+
+// ============================================================
+// АВТОРИЗАЦИЯ — Google Identity Services
+// ============================================================
+function startGoogleLogin() {
+  if (!SCRIPT_URL) {
+    showToast('Сначала укажите URL Apps Script ниже', true); return;
+  }
+  // Загружаем Google Identity Services динамически
+  if (!window.google) {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = initGoogleAuth;
+    document.head.appendChild(script);
+  } else {
+    initGoogleAuth();
+  }
+}
+
+function initGoogleAuth() {
+  // В финальной версии CLIENT_ID берётся из Google Cloud Console
+  // Для прототипа используем prompt для ввода email
+  const email = prompt('Введите ваш Gmail адрес (прототип):');
+  if (!email) return;
+  loginWithEmail(email.trim().toLowerCase());
+}
+
+async function loginWithEmail(email) {
+  showOverlay('ПРОВЕРКА ПОЛЬЗОВАТЕЛЯ...');
+  try {
+    const res = await apiGet({ action: 'getUser', email });
+    if (res.error) {
+      hideOverlay();
+      showToast('Пользователь не найден в системе', true);
+      return;
+    }
+    currentUser = res.user;
+    await loadRefs();
+    afterLogin();
+  } catch (err) {
+    hideOverlay();
+    showToast('Ошибка подключения к таблице', true);
+  }
+}
+
+async function loadRefs() {
+  showOverlay('ЗАГРУЗКА СПРАВОЧНИКОВ...');
+  try {
+    const res = await apiGet({ action: 'getRefs' });
+    if (res.success) {
+      refs = res.refs;
+      localStorage.setItem('sto_refs_cache', JSON.stringify(refs));
+      localStorage.setItem('sto_refs_time', Date.now());
+    } else {
+      // fallback на кеш
+      const cached = localStorage.getItem('sto_refs_cache');
+      if (cached) refs = JSON.parse(cached);
+    }
+  } catch (err) {
+    const cached = localStorage.getItem('sto_refs_cache');
+    if (cached) { refs = JSON.parse(cached); showToast('Справочник из кеша', false); }
+    else showToast('Не удалось загрузить справочники', true);
+  }
+  hideOverlay();
+}
+
+function afterLogin() {
+  document.getElementById('app-header').style.display = 'flex';
+  document.getElementById('bottom-nav').classList.add('visible');
+  document.body.classList.add('has-nav');
+  const initials = currentUser.name.split(' ').map(w => w[0]).join('').substring(0, 2);
+  document.getElementById('user-avatar-letter').textContent = initials;
+  document.getElementById('user-name-short').textContent = currentUser.name.split(' ')[0];
+  showScreen('form');
+  initForm();
+}
+
+function logout() {
+  if (!confirm('Выйти из аккаунта?')) return;
+  currentUser = null;
+  document.getElementById('app-header').style.display = 'none';
+  document.getElementById('bottom-nav').classList.remove('visible');
+  document.body.classList.remove('has-nav');
+  showScreenRaw('login');
+}
+
+// ============================================================
+// ФОРМА
+// ============================================================
+function initForm() {
+  const now = new Date();
+  const id = 'R' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '-' + Math.random().toString(36).substr(2,5).toUpperCase();
+  document.getElementById('display-id').textContent = id;
+  document.getElementById('display-date').textContent = now.toLocaleString('ru-RU', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('display-executor').textContent = currentUser?.name || '—';
+  document.getElementById('display-group').textContent = currentUser?.group || '—';
+
+  // Услуги из справочника
+  const serviceSelect = document.getElementById('f-service');
+  serviceSelect.innerHTML = '<option value="">— Выберите услугу —</option>';
+  const group = currentUser?.group || '';
+  const services = refs?.services?.[group] || [];
+  services.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    serviceSelect.appendChild(opt);
+  });
+
+  // Авто datalist
+  const cars = refs?.cars || [];
+  document.getElementById('dl-cars').innerHTML = cars.map(c => `<option value="${c}">`).join('');
+
+  // Сбросить материалы
+  document.getElementById('materials-list').innerHTML = '';
+  document.getElementById('f-car-model').value = '';
+  document.getElementById('f-car-plate').value = '';
+  document.getElementById('f-vin').value = '';
+  document.getElementById('f-comment').value = '';
+  document.getElementById('f-kosyak').checked = false;
+  matCount = 0;
+}
+
+function onServiceChange() {
+  document.getElementById('materials-list').innerHTML = '';
+  matCount = 0;
+}
+
+function addMaterial() {
+  const service = document.getElementById('f-service').value;
+  matCount++;
+  const idx = matCount;
+  const mats = refs?.materials?.[service] || [];
+
+  const div = document.createElement('div');
+  div.className = 'material-item';
+  div.id = 'mat-' + idx;
+  div.innerHTML = `
+    <button class="mat-remove" onclick="removeMat(${idx})">✕</button>
+    <div class="form-group" style="margin-bottom:0;padding-right:28px">
+      <label class="form-label" style="font-size:10px">МАТЕРИАЛ ${idx}</label>
+      <input list="dlm-${idx}" class="form-control" id="mat-name-${idx}" placeholder="Название материала" autocomplete="off">
+      <datalist id="dlm-${idx}">${mats.map(m => `<option value="${m.name}">`).join('')}</datalist>
+    </div>
+    <div class="mat-row">
+      <div>
+        <label class="form-label" style="font-size:10px">КОЛ-ВО <span class="req">*</span></label>
+        <input type="number" class="form-control" id="mat-qty-${idx}" placeholder="0" min="0" step="0.01">
+      </div>
+      <div>
+        <label class="form-label" style="font-size:10px">ЕД.ИЗМ</label>
+        <input class="form-control" id="mat-unit-${idx}" placeholder="шт">
+      </div>
+      <div>
+        <label class="form-label" style="font-size:10px">NR</label>
+        <input class="form-control" id="mat-nr-${idx}" placeholder="—">
+      </div>
+    </div>
+  `;
+  document.getElementById('materials-list').appendChild(div);
+
+  // Автозаполнение единицы измерения при выборе материала
+  document.getElementById('mat-name-' + idx).addEventListener('change', function() {
+    const selected = mats.find(m => m.name === this.value);
+    if (selected?.unit) document.getElementById('mat-unit-' + idx).value = selected.unit;
+  });
+}
+
+function removeMat(idx) {
+  document.getElementById('mat-' + idx)?.remove();
+}
+
+function toggleCheck(id) {
+  const el = document.getElementById(id);
+  el.checked = !el.checked;
+}
+
+function resetForm() {
+  if (!confirm('Сбросить форму?')) return;
+  initForm();
+}
+
+// ============================================================
+// СОХРАНЕНИЕ
+// ============================================================
+async function saveRecord() {
+  const carModel = document.getElementById('f-car-model').value.trim();
+  const carPlate = document.getElementById('f-car-plate').value.trim();
+  const service  = document.getElementById('f-service').value;
+
+  if (!carModel) { showToast('Укажите марку и модель авто', true); return; }
+  if (!carPlate) { showToast('Укажите номер авто', true); return; }
+  if (!service)  { showToast('Выберите услугу / работу', true); return; }
+
+  // Собрать материалы
+  const materials = [];
+  document.querySelectorAll('.material-item').forEach(item => {
+    const id = item.id.replace('mat-', '');
+    const name = document.getElementById('mat-name-' + id)?.value?.trim() || '';
+    const qty  = document.getElementById('mat-qty-' + id)?.value || '';
+    const unit = document.getElementById('mat-unit-' + id)?.value?.trim() || '';
+    const nr   = document.getElementById('mat-nr-' + id)?.value?.trim() || '';
+    materials.push({ name, qty, unit, nr });
+  });
+
+  const baseRecord = {
+    ID: document.getElementById('display-id').textContent,
+    Дата: document.getElementById('display-date').textContent,
+    Исполнитель: currentUser.name,
+    Email: currentUser.email,
+    Группа_услуг: currentUser.group,
+    Марка_модель: carModel,
+    Номер_авто: carPlate,
+    VIN: document.getElementById('f-vin').value.trim(),
+    Косяк: document.getElementById('f-kosyak').checked ? 'Да' : 'Нет',
+    Услуга: service,
+    Комментарий: document.getElementById('f-comment').value.trim(),
+  };
+
+  // Строки для таблицы: одна строка = один материал
+  const rows = materials.length > 0
+    ? materials.map(m => ({ ...baseRecord, Материал: m.name, Количество: m.qty, Ед_изм: m.unit, NR: m.nr }))
+    : [{ ...baseRecord, Материал: '', Количество: '', Ед_изм: '', NR: '' }];
+
+  // Сохранить локально (для истории и как fallback)
+  const localEntry = { ...baseRecord, materials, _status: 'pending', _ts: Date.now() };
+  localHistory.unshift(localEntry);
+  localStorage.setItem('sto_history', JSON.stringify(localHistory));
+
+  // Отправить в Google Sheets
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading" style="width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;display:inline-block;animation:spin .6s linear infinite"></span> Сохранение...';
+
+  try {
+    const res = await apiPost({ action: 'saveRecord', rows });
+    if (res.success) {
+      localHistory[0]._status = 'ok';
+      localStorage.setItem('sto_history', JSON.stringify(localHistory));
+      showToast(`✓ Сохранено в Google Sheets (${res.saved} стр.)`);
+    } else {
+      localHistory[0]._status = 'error';
+      localStorage.setItem('sto_history', JSON.stringify(localHistory));
+      showToast('Ошибка записи в таблицу: ' + (res.error || ''), true);
+    }
+  } catch (err) {
+    localHistory[0]._status = 'error';
+    localStorage.setItem('sto_history', JSON.stringify(localHistory));
+    showToast('Ошибка сети. Запись сохранена локально.', true);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Сохранить';
+  setTimeout(() => initForm(), 600);
+}
+
+// ============================================================
+// ИСТОРИЯ
+// ============================================================
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (localHistory.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>Записей пока нет</p></div>`;
+    return;
+  }
+  const statusMap = { ok: '✓ В таблице', pending: '⏳ Ожидает', error: '✕ Ошибка' };
+  const statusClass = { ok: 'ok', pending: 'pending', error: 'error' };
+  el.innerHTML = localHistory.map(r => `
+    <div class="history-item">
+      <div class="history-item-header">
+        <span class="history-item-id">${r.ID}</span>
+        <span class="history-item-date">${r.Дата}</span>
+      </div>
+      <div class="history-item-title">${r.Марка_модель || '—'} · ${r.Номер_авто || '—'}</div>
+      <div class="history-item-sub">${r.Услуга || '—'} · ${r.Исполнитель || '—'}${r.materials?.length ? ' · ' + r.materials.length + ' мат.' : ''}</div>
+      <div class="history-status ${statusClass[r._status] || 'pending'}">${statusMap[r._status] || '⏳'}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// API — через JSONP (обходит CORS редиректы Google)
+// ============================================================
+function apiGet(params) {
+  return new Promise((resolve, reject) => {
+    if (!SCRIPT_URL) { reject(new Error('Script URL not set')); return; }
+
+    const cbName = 'cb_' + Math.random().toString(36).substr(2, 8);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      reject(new Error('Timeout'));
+    }, 10000);
+
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      const script = document.getElementById(cbName);
+      if (script) script.remove();
+      resolve(data);
+    };
+
+    params.callback = cbName;
+    const qs = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+    const script = document.createElement('script');
+    script.id = cbName;
+    script.src = `${SCRIPT_URL}?${qs}`;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      reject(new Error('Script load error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+async function apiPost(data) {
+  if (!SCRIPT_URL) throw new Error('Script URL not set');
+  // Передаём через GET+JSONP (обход CORS)
+  const params = {
+    _method: 'POST',
+    action: data.action,
+    rows: encodeURIComponent(JSON.stringify(data.rows || [])),
+  };
+  return apiGet(params);
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function showScreenRaw(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+function showScreen(id) {
+  showScreenRaw(id);
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-' + id)?.classList.add('active');
+  if (id === 'history') renderHistory();
+}
+function showOverlay(text) {
+  document.getElementById('overlay-text').textContent = text;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function hideOverlay() { document.getElementById('overlay').classList.add('hidden'); }
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function pad(n) { return ('0'+n).slice(-2); }
+</script>
+</body>
+</html>
